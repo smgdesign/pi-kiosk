@@ -1,0 +1,16 @@
+{
+  "missingEnvVars": "Missing required environment variables: KIOSK_USERNAME, KIOSK_PASSWORD",
+  "starting": "Starting kiosk",
+  "launchingBrowser": "Launching browser",
+  "navigating": "Navigating to target URL",
+  "loginDetected": "Login page detected, authenticating",
+  "loginComplete": "Login successful",
+  "kioskRunning": "Kiosk is running, monitoring session",
+  "navigationRetry": "Navigation failed, retrying",
+  "navigationFailed": "Failed to load page after all retries",
+  "sessionCheckError": "Session check error:",
+  "recoveryAttempt": "Attempting recovery",
+  "recoveryFailed": "Recovery failed:",
+  "pageCrashed": "Page crashed, exiting for restart",
+  "fatalError": "Fatal error:"
+}

@@ -1,0 +1,26 @@
+{
+  "name": "Deezer",
+  "url": "https://www.deezer.com/en/",
+  "selectors": {
+    "loginIndicator": "input[type=\"email\"]",
+    "username": "input[type=\"email\"]",
+    "password": "input[type=\"password\"]",
+    "submit": "button[type=\"submit\"]"
+  },
+  "loginUrlPattern": "/login",
+  "checkInterval": 30000,
+  "navigationTimeout": 30000,
+  "retryDelay": 5000,
+  "maxRetries": 5,
+  "userDataDir": "./browser-data",
+  "chromiumArgs": [
+    "--kiosk",
+    "--start-maximized",
+    "--no-first-run",
+    "--disable-infobars",
+    "--noerrdialogs",
+    "--disable-session-crashed-bubble",
+    "--disable-features=TranslateUI",
+    "--disable-notifications"
+  ]
+}

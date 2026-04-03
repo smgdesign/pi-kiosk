@@ -1,0 +1,16 @@
+{
+  "name": "pi-kiosk",
+  "version": "1.0.0",
+  "description": "Raspberry Pi kiosk with automatic login and session recovery",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node --env-file=.env kiosk.mjs"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "dependencies": {
+    "playwright": "^1.52.0"
+  }
+}
