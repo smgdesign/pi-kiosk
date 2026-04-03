@@ -31,6 +31,16 @@ print_error() {
   echo -e "${RED}[!]${NC} $1"
 }
 
+run_quiet() {
+  local label="$1"
+  shift
+  if ! "$@" > /dev/null 2>&1; then
+    print_error "$label - something went wrong. Re-running with details:"
+    "$@"
+    exit 1
+  fi
+}
+
 check_os() {
   if [[ ! -f /etc/debian_version ]]; then
     print_error "This installer requires Raspberry Pi OS (Debian-based)."
@@ -98,12 +108,12 @@ install_node() {
   fi
 
   if [[ "$current_major" -lt "$NODE_MAJOR" ]]; then
-    print_step "Installing Node.js ${NODE_MAJOR}..."
-    curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | sudo -E bash -
-    sudo apt-get install -y nodejs
-    print_done "Node.js $(node -v) installed"
+    print_step "Installing services..."
+    curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" 2>/dev/null | sudo -E bash - > /dev/null 2>&1
+    run_quiet "Installing services" sudo apt-get install -y nodejs
+    print_done "Services installed"
   else
-    print_done "Node.js $(node -v) already installed"
+    print_done "Services already installed"
   fi
 }
 
@@ -116,28 +126,27 @@ install_project() {
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
     if [[ -f "$REPO_ROOT/kiosk.mjs" && -f "$REPO_ROOT/package.json" ]]; then
-      print_step "Installing from local files..."
       mkdir -p "$INSTALL_DIR"
       cp "$REPO_ROOT"/kiosk.mjs "$INSTALL_DIR/"
       cp "$REPO_ROOT"/package.json "$INSTALL_DIR/"
       cp "$REPO_ROOT"/strings.json "$INSTALL_DIR/"
       cp -r "$REPO_ROOT"/sites "$INSTALL_DIR/"
     else
-      print_step "Cloning repository..."
-      git clone "$REPO_URL" "$INSTALL_DIR"
+      git clone "$REPO_URL" "$INSTALL_DIR" > /dev/null 2>&1
     fi
   fi
 
-  print_step "Installing dependencies..."
-  (cd "$INSTALL_DIR" && npm install)
+  print_step "Setting up automation..."
+  run_quiet "Setting up automation" bash -c "cd $INSTALL_DIR && npm install"
+  print_done "Automation ready"
 
-  print_step "Installing Chromium browser (this may take a few minutes)..."
-  (cd "$INSTALL_DIR" && npx playwright install chromium)
+  print_step "Downloading web browser (this may take a few minutes)..."
+  run_quiet "Downloading web browser" bash -c "cd $INSTALL_DIR && npx playwright install chromium"
+  print_done "Web browser downloaded"
 
-  print_step "Installing system dependencies for Chromium..."
-  (cd "$INSTALL_DIR" && sudo npx playwright install-deps chromium)
-
-  print_done "Project installed to $INSTALL_DIR"
+  print_step "Configuring web browser..."
+  run_quiet "Configuring web browser" bash -c "cd $INSTALL_DIR && sudo npx playwright install-deps chromium"
+  print_done "Web browser configured"
 }
 
 write_env() {
@@ -211,12 +220,19 @@ main() {
   select_site
   prompt_credentials
   write_env
-  install_service
+  if command -v systemctl &>/dev/null; then
+    install_service
+  else
+    print_step "systemd not available, skipping service install"
+    print_done "Run manually: cd $INSTALL_DIR && node --env-file=.env kiosk.mjs"
+  fi
   print_summary
 
-  read -rp "Reboot now to start the kiosk? (y/n): " REBOOT < /dev/tty
-  if [[ "$REBOOT" == "y" || "$REBOOT" == "Y" ]]; then
-    sudo reboot
+  if command -v systemctl &>/dev/null; then
+    read -rp "Reboot now to start the kiosk? (y/n): " REBOOT < /dev/tty
+    if [[ "$REBOOT" == "y" || "$REBOOT" == "Y" ]]; then
+      sudo reboot
+    fi
   fi
 }
 

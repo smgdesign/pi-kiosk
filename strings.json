@@ -12,5 +12,6 @@
   "recoveryAttempt": "Attempting recovery",
   "recoveryFailed": "Recovery failed:",
   "pageCrashed": "Page crashed, exiting for restart",
+  "cookieDismissed": "Cookie consent accepted",
   "fatalError": "Fatal error:"
 }
