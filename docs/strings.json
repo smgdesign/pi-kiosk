@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "title": "pi-kiosk",
+    "description": "Turn any website into a full-screen app on a Raspberry Pi"
+  },
+  "welcome": {
+    "command": "cat README",
+    "tagline": "Any website. Full screen. Locked down.",
+    "description": "Turn a Raspberry Pi into a single-purpose touchscreen. Your web app boots full screen, logs itself in, and stays put. No browser chrome. No desktop. No wandering off.",
+    "useCases": "Built for reception check-ins, gym dashboards, bar music systems, digital signage, smart lighting panels — anywhere you need a screen that does one thing and does it well."
+  },
+  "quickStart": {
+    "command": "./install.sh",
+    "heading": "QUICK START",
+    "instruction": "SSH into your Raspberry Pi and run:",
+    "curlCommand": "curl -sSL https://raw.githubusercontent.com/smgdesign/pi-kiosk/main/scripts/install.sh | bash",
+    "orText": "or download and inspect it first:",
+    "downloadLabel": "install.sh",
+    "downloadUrl": "https://raw.githubusercontent.com/smgdesign/pi-kiosk/main/scripts/install.sh"
+  },
+  "features": {
+    "command": "cat FEATURES",
+    "heading": "WHAT YOU GET",
+    "items": [
+      "Installs Node.js 24 + Chromium automatically",
+      "Full-screen kiosk browser on boot",
+      "Auto-login to any configured website",
+      "Session monitoring with automatic recovery",
+      "Cookie consent auto-dismissal",
+      "systemd service with auto-restart on failure",
+      "JSON-based site configs — swap sites in seconds"
+    ]
+  },
+  "howItWorks": {
+    "command": "cat OVERVIEW",
+    "heading": "HOW IT WORKS",
+    "steps": [
+      { "num": "01", "label": "INSTALL", "text": "The script sets up Node.js, pulls the repo, and downloads Chromium via Playwright." },
+      { "num": "02", "label": "CONFIGURE", "text": "Pick a site from the available configs and enter your login credentials." },
+      { "num": "03", "label": "BOOT", "text": "A systemd service launches a full-screen kiosk browser on every startup." },
+      { "num": "04", "label": "RECOVER", "text": "Periodic health checks detect session drops and re-authenticate automatically." }
+    ]
+  },
+  "usage": {
+    "command": "kiosk --help",
+    "heading": "COMMANDS",
+    "items": [
+      { "cmd": "sudo systemctl start kiosk", "desc": "Start the kiosk" },
+      { "cmd": "sudo systemctl stop kiosk", "desc": "Stop it" },
+      { "cmd": "sudo systemctl restart kiosk", "desc": "Restart after changes" },
+      { "cmd": "sudo systemctl status kiosk", "desc": "Check status" },
+      { "cmd": "journalctl -u kiosk -f", "desc": "Stream live logs" }
+    ],
+    "credentialsHeading": "CREDENTIALS",
+    "credentialsText": "Stored locally in ~/kiosk/.env and never leave your Pi.",
+    "credentialsCommands": [
+      { "cmd": "nano ~/kiosk/.env", "desc": "Edit credentials" },
+      { "cmd": "sudo systemctl restart kiosk", "desc": "Apply changes" }
+    ]
+  },
+  "sites": {
+    "command": "ls sites/",
+    "heading": "CUSTOM SITES",
+    "description": "Drop a JSON config in the sites/ directory to add your own. Each config defines the target URL, login selectors, and session parameters.",
+    "hint": "Check out sites/deezer.json for a working example."
+  },
+  "requirements": {
+    "command": "cat REQUIREMENTS",
+    "heading": "REQUIREMENTS",
+    "items": [
+      "Raspberry Pi with a desktop environment",
+      "Raspberry Pi OS (Debian-based)",
+      "Internet connection",
+      "Login credentials for your target site"
+    ]
+  },
+  "footer": {
+    "name": "pi-kiosk v1.0.0",
+    "githubUrl": "https://github.com/smgdesign/pi-kiosk",
+    "githubLabel": "github.com/smgdesign/pi-kiosk",
+    "copyright": "SMG Design Ltd"
+  }
+}

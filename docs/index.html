@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pi-kiosk</title>
+    <meta name="description" content="Turn any website into a full-screen app on a Raspberry Pi. No browser chrome, no desktop, no distractions.">
+    <meta property="og:title" content="pi-kiosk">
+    <meta property="og:description" content="Turn any website into a full-screen app on a Raspberry Pi. No browser chrome, no desktop, no distractions.">
+    <meta property="og:type" content="website">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        [x-cloak] { display: none !important; }
+        @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+        .cursor-blink { animation: blink 1s step-end infinite; }
+        @keyframes typing { from { width: 0; } to { width: 100%; } }
+        .scanlines {
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 1px,
+                rgba(0, 0, 0, 0.03) 1px,
+                rgba(0, 0, 0, 0.03) 2px
+            );
+            pointer-events: none;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+    </style>
+</head>
+
+<body class="bg-[#010409] font-mono min-h-screen antialiased">
+    <div class="min-h-screen flex items-start justify-center p-2 md:p-6 lg:p-8"
+         x-data="terminal()" x-init="await init()">
+
+        <div class="w-full max-w-4xl">
+            <!-- Terminal Chrome -->
+            <div class="bg-[#161b22] rounded-t-xl px-4 py-3 flex items-center gap-2 border border-b-0 border-[#30363d]">
+                <span class="w-3 h-3 rounded-full bg-[#ff5f57] opacity-80"></span>
+                <span class="w-3 h-3 rounded-full bg-[#febc2e] opacity-80"></span>
+                <span class="w-3 h-3 rounded-full bg-[#28c840] opacity-80"></span>
+                <span class="flex-1 text-center text-[#484f58] text-xs tracking-widest"
+                      x-text="loaded ? s.meta.title + ' &mdash; bash' : 'connecting...'"></span>
+            </div>
+
+            <!-- Terminal Body -->
+            <div class="relative bg-[#0d1117] rounded-b-xl border border-t-0 border-[#30363d] p-4 md:p-8 min-h-[80vh] text-sm md:text-base leading-relaxed text-[#c9d1d9] overflow-hidden">
+                <!-- Scanline overlay -->
+                <div class="scanlines absolute inset-0 z-10"></div>
+
+                <div class="relative z-20">
+
+                    <!-- Loading -->
+                    <div x-show="!loaded" class="flex items-center gap-1 py-4">
+                        <span class="text-[#7ee787]">guest@pi</span><span class="text-[#484f58]">:</span><span class="text-[#79c0ff]">~</span><span class="text-[#c9d1d9]">$</span>
+                        <span class="cursor-blink ml-1 text-[#7ee787]">_</span>
+                    </div>
+
+                    <!-- Content -->
+                    <div x-cloak x-show="loaded">
+
+                        <!-- Login banner -->
+                        <div class="text-[#484f58] text-xs mb-4">
+                            <span>Last login: <span x-text="loginTime"></span> on tty1</span>
+                        </div>
+
+                        <!-- ASCII Banner -->
+                        <pre class="text-[#7ee787] text-[0.45rem] leading-tight sm:text-[0.55rem] md:text-xs mb-2 overflow-x-auto select-none">
+ ___ ___   _  ___  ___  ___ _  __
+| _ \_ _| | |/ / |/ _ \/ __| |/ /
+|  _/| |  |   &lt;| | (_) \__ \   &lt;
+|_| |___| |_|\_\_|\___/|___/_|\_\</pre>
+                        <div class="text-[#484f58] text-xs mb-8 ml-1" x-text="s.footer.name"></div>
+
+                        <!-- Welcome -->
+                        <div class="mb-8">
+                            <div class="prompt">
+                                <span class="text-[#7ee787]">guest@pi</span><span class="text-[#484f58]">:</span><span class="text-[#79c0ff]">~</span><span class="text-[#c9d1d9]">$</span>
+                                <span class="text-[#c9d1d9] ml-2" x-text="s.welcome.command"></span>
+                            </div>
+                            <div class="mt-3 pl-0">
+                                <p class="text-base md:text-lg text-[#f0f6fc] font-medium" x-text="s.welcome.tagline"></p>
+                                <p class="mt-2 text-[#c9d1d9]" x-text="s.welcome.description"></p>
+                                <p class="mt-2 text-[#8b949e]" x-text="s.welcome.useCases"></p>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-[#21262d] my-8"></div>
+
+                        <!-- Quick Start -->
+                        <div class="mb-8">
+                            <div class="prompt">
+                                <span class="text-[#7ee787]">guest@pi</span><span class="text-[#484f58]">:</span><span class="text-[#79c0ff]">~</span><span class="text-[#c9d1d9]">$</span>
+                                <span class="text-[#c9d1d9] ml-2" x-text="s.quickStart.command"></span>
+                            </div>
+                            <div class="mt-4 pl-0">
+                                <div class="text-[#e3b341] font-bold tracking-wider text-xs mb-4" x-text="'=== ' + s.quickStart.heading + ' ==='"></div>
+                                <p class="text-[#8b949e] mb-3" x-text="s.quickStart.instruction"></p>
+                                <div class="bg-[#161b22] border border-[#30363d] rounded-lg p-3 md:p-4 flex items-start md:items-center justify-between gap-3 group">
+                                    <code class="text-[#79c0ff] text-xs md:text-sm break-all flex-1 leading-relaxed" x-text="s.quickStart.curlCommand"></code>
+                                    <button @click="copyInstall()"
+                                            class="flex-shrink-0 text-xs border rounded px-2 py-1 transition-all duration-200"
+                                            :class="copied
+                                                ? 'text-[#7ee787] border-[#7ee787]'
+                                                : 'text-[#484f58] border-[#30363d] hover:text-[#7ee787] hover:border-[#7ee787]'"
+                                            x-text="copied ? 'copied!' : 'copy'">
+                                    </button>
+                                </div>
+                                <div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
+                                    <span class="text-[#484f58]">#</span>
+                                    <span class="text-[#8b949e]" x-text="s.quickStart.orText"></span>
+                                    <a :href="s.quickStart.downloadUrl"
+                                       class="text-[#79c0ff] hover:text-[#a5d6ff] underline underline-offset-4 decoration-dotted transition-colors"
+                                       target="_blank"
+                                       x-text="s.quickStart.downloadLabel"></a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-[#21262d] my-8"></div>
+
+                        <!-- Features -->
+                        <div class="mb-8">
+                            <div class="prompt">
+                                <span class="text-[#7ee787]">guest@pi</span><span class="text-[#484f58]">:</span><span class="text-[#79c0ff]">~</span><span class="text-[#c9d1d9]">$</span>
+                                <span class="text-[#c9d1d9] ml-2" x-text="s.features.command"></span>
+                            </div>
+                            <div class="mt-4 pl-0">
+                                <div class="text-[#e3b341] font-bold tracking-wider text-xs mb-4" x-text="'=== ' + s.features.heading + ' ==='"></div>
+                                <div class="space-y-2">
+                                    <template x-for="(item, i) in s.features.items" :key="i">
+                                        <div class="flex items-start gap-3">
+                                            <span class="text-[#7ee787] flex-shrink-0">[+]</span>
+                                            <span class="text-[#c9d1d9]" x-text="item"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-[#21262d] my-8"></div>
+
+                        <!-- How It Works -->
+                        <div class="mb-8">
+                            <div class="prompt">
+                                <span class="text-[#7ee787]">guest@pi</span><span class="text-[#484f58]">:</span><span class="text-[#79c0ff]">~</span><span class="text-[#c9d1d9]">$</span>
+                                <span class="text-[#c9d1d9] ml-2" x-text="s.howItWorks.command"></span>
+                            </div>
+                            <div class="mt-4 pl-0">
+                                <div class="text-[#e3b341] font-bold tracking-wider text-xs mb-4" x-text="'=== ' + s.howItWorks.heading + ' ==='"></div>
+                                <div class="space-y-5">
+                                    <template x-for="(step, i) in s.howItWorks.steps" :key="i">
+                                        <div class="flex items-start gap-4">
+                                            <span class="text-[#484f58] text-xs font-bold flex-shrink-0 mt-0.5 tabular-nums" x-text="step.num"></span>
+                                            <div>
+                                                <span class="text-[#ff7b72] font-bold text-xs tracking-wider" x-text="step.label"></span>
+                                                <p class="text-[#8b949e] mt-1" x-text="step.text"></p>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-[#21262d] my-8"></div>
+
+                        <!-- Usage -->
+                        <div class="mb-8">
+                            <div class="prompt">
+                                <span class="text-[#7ee787]">guest@pi</span><span class="text-[#484f58]">:</span><span class="text-[#79c0ff]">~</span><span class="text-[#c9d1d9]">$</span>
+                                <span class="text-[#c9d1d9] ml-2" x-text="s.usage.command"></span>
+                            </div>
+                            <div class="mt-4 pl-0">
+                                <div class="text-[#e3b341] font-bold tracking-wider text-xs mb-4" x-text="'=== ' + s.usage.heading + ' ==='"></div>
+                                <div class="space-y-2">
+                                    <template x-for="(item, i) in s.usage.items" :key="i">
+                                        <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                            <code class="text-[#79c0ff] text-xs md:text-sm whitespace-nowrap" x-text="'$ ' + item.cmd"></code>
+                                            <span class="text-[#484f58] hidden sm:inline">#</span>
+                                            <span class="text-[#8b949e] text-xs md:text-sm" x-text="item.desc"></span>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <!-- Credentials subsection -->
+                                <div class="mt-6 pt-4 border-t border-[#21262d]">
+                                    <div class="text-[#e3b341] font-bold tracking-wider text-xs mb-3" x-text="'=== ' + s.usage.credentialsHeading + ' ==='"></div>
+                                    <p class="text-[#8b949e] mb-3" x-text="s.usage.credentialsText"></p>
+                                    <div class="space-y-2">
+                                        <template x-for="(item, i) in s.usage.credentialsCommands" :key="i">
+                                            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                                                <code class="text-[#79c0ff] text-xs md:text-sm whitespace-nowrap" x-text="'$ ' + item.cmd"></code>
+                                                <span class="text-[#484f58] hidden sm:inline">#</span>
+                                                <span class="text-[#8b949e] text-xs md:text-sm" x-text="item.desc"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-[#21262d] my-8"></div>
+
+                        <!-- Custom Sites -->
+                        <div class="mb-8">
+                            <div class="prompt">
+                                <span class="text-[#7ee787]">guest@pi</span><span class="text-[#484f58]">:</span><span class="text-[#79c0ff]">~</span><span class="text-[#c9d1d9]">$</span>
+                                <span class="text-[#c9d1d9] ml-2" x-text="s.sites.command"></span>
+                            </div>
+                            <div class="mt-4 pl-0">
+                                <div class="text-[#e3b341] font-bold tracking-wider text-xs mb-4" x-text="'=== ' + s.sites.heading + ' ==='"></div>
+                                <p class="text-[#c9d1d9]" x-text="s.sites.description"></p>
+                                <p class="mt-2 text-[#8b949e]" x-text="s.sites.hint"></p>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-[#21262d] my-8"></div>
+
+                        <!-- Requirements -->
+                        <div class="mb-8">
+                            <div class="prompt">
+                                <span class="text-[#7ee787]">guest@pi</span><span class="text-[#484f58]">:</span><span class="text-[#79c0ff]">~</span><span class="text-[#c9d1d9]">$</span>
+                                <span class="text-[#c9d1d9] ml-2" x-text="s.requirements.command"></span>
+                            </div>
+                            <div class="mt-4 pl-0">
+                                <div class="text-[#e3b341] font-bold tracking-wider text-xs mb-4" x-text="'=== ' + s.requirements.heading + ' ==='"></div>
+                                <div class="space-y-2">
+                                    <template x-for="(item, i) in s.requirements.items" :key="i">
+                                        <div class="flex items-start gap-3">
+                                            <span class="text-[#e3b341] flex-shrink-0">*</span>
+                                            <span class="text-[#c9d1d9]" x-text="item"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-[#21262d] my-8"></div>
+
+                        <!-- Footer -->
+                        <div class="mb-4">
+                            <div class="prompt">
+                                <span class="text-[#7ee787]">guest@pi</span><span class="text-[#484f58]">:</span><span class="text-[#79c0ff]">~</span><span class="text-[#c9d1d9]">$</span>
+                                <span class="text-[#c9d1d9] ml-2">exit</span>
+                            </div>
+                            <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-[#484f58]">
+                                <a :href="s.footer.githubUrl"
+                                   class="text-[#79c0ff] hover:text-[#a5d6ff] underline underline-offset-4 decoration-dotted transition-colors"
+                                   target="_blank" rel="noopener noreferrer"
+                                   x-text="s.footer.githubLabel"></a>
+                                <span x-text="'&copy; ' + new Date().getFullYear() + ' ' + s.footer.copyright"></span>
+                            </div>
+                        </div>
+
+                        <!-- Blinking cursor -->
+                        <div class="mt-6 flex items-center gap-1">
+                            <span class="text-[#7ee787]">guest@pi</span><span class="text-[#484f58]">:</span><span class="text-[#79c0ff]">~</span><span class="text-[#c9d1d9]">$</span>
+                            <span class="cursor-blink ml-1 text-[#7ee787]">_</span>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function terminal() {
+            return {
+                s: null,
+                loaded: false,
+                copied: false,
+                loginTime: '',
+                async init() {
+                    this.loginTime = new Date().toLocaleDateString('en-GB', {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    });
+                    const res = await fetch('strings.json');
+                    this.s = await res.json();
+                    this.loaded = true;
+                },
+                async copyInstall() {
+                    try {
+                        await navigator.clipboard.writeText(this.s.quickStart.curlCommand);
+                        this.copied = true;
+                        setTimeout(() => this.copied = false, 2000);
+                    } catch {
+                        // clipboard API not available
+                    }
+                },
+            };
+        }
+    </script>
+</body>
+
+</html>
