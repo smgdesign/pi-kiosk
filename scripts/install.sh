@@ -174,6 +174,34 @@ EOF
   print_done "Credentials saved"
 }
 
+check_site_update() {
+  if [[ ! -f "$INSTALL_DIR/config.json" ]]; then
+    return 1
+  fi
+
+  local current_name
+  current_name=$(jq -r '.name' "$INSTALL_DIR/config.json" 2>/dev/null)
+  local current_version
+  current_version=$(jq -r '.version // 0' "$INSTALL_DIR/config.json" 2>/dev/null)
+
+  local site_file="$INSTALL_DIR/sites/${current_name,,}.json"
+  if [[ ! -f "$site_file" ]]; then
+    return 1
+  fi
+
+  local site_version
+  site_version=$(jq -r '.version // 0' "$site_file" 2>/dev/null)
+
+  if [[ "$site_version" -gt "$current_version" ]]; then
+    print_step "${current_name} config updated (v${current_version} -> v${site_version}), applying changes..."
+    cp "$site_file" "$INSTALL_DIR/config.json"
+    print_done "${current_name} config updated"
+    return 0
+  fi
+
+  return 1
+}
+
 install_service() {
   local current_user
   current_user="$(whoami)"
@@ -235,6 +263,7 @@ main() {
   install_project
 
   if [[ "$IS_UPDATE" == true ]]; then
+    check_site_update || true
     if [[ "$RESET_CREDENTIALS" == true ]]; then
       SELECTED_SITE=$(jq -r '.name' "$INSTALL_DIR/config.json" 2>/dev/null || echo "kiosk")
       prompt_credentials
