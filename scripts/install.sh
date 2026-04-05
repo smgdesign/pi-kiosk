@@ -10,6 +10,20 @@ NC='\033[0m'
 REPO_URL="https://github.com/smgdesign/pi-kiosk.git"
 INSTALL_DIR="/home/$(whoami)/kiosk"
 NODE_MAJOR=24
+RESET_CREDENTIALS=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --reset)
+      RESET_CREDENTIALS=true
+      shift
+      ;;
+    *)
+      print_error "Unknown option: $1"
+      exit 1
+      ;;
+  esac
+done
 
 print_banner() {
   echo ""
@@ -121,7 +135,9 @@ install_project() {
   if [[ -d "$INSTALL_DIR/.git" ]]; then
     print_step "Updating existing installation..."
     git -C "$INSTALL_DIR" pull --ff-only
+    IS_UPDATE=true
   else
+    IS_UPDATE=false
     # If running from inside the repo, copy files instead of cloning
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -217,6 +233,25 @@ main() {
   check_os
   install_node
   install_project
+
+  if [[ "$IS_UPDATE" == true ]]; then
+    if [[ "$RESET_CREDENTIALS" == true ]]; then
+      SELECTED_SITE=$(jq -r '.name' "$INSTALL_DIR/config.json" 2>/dev/null || echo "kiosk")
+      prompt_credentials
+      write_env
+    fi
+    print_done "Update complete"
+    echo ""
+    if command -v systemctl &>/dev/null; then
+      read -rp "Restart kiosk service now? (y/n): " RESTART < /dev/tty
+      if [[ "$RESTART" == "y" || "$RESTART" == "Y" ]]; then
+        sudo systemctl restart kiosk
+        print_done "Kiosk service restarted"
+      fi
+    fi
+    return
+  fi
+
   select_site
   prompt_credentials
   write_env

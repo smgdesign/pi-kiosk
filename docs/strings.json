@@ -25,7 +25,7 @@
       "Installs Node.js 24 + Chromium automatically",
       "Full-screen kiosk browser on boot",
       "Auto-login to any configured website",
-      "Session monitoring with automatic recovery",
+      "Cookie-based session monitoring with automatic recovery",
       "Cookie consent auto-dismissal",
       "systemd service with auto-restart on failure",
       "JSON-based site configs — swap sites in seconds"
@@ -38,7 +38,7 @@
       { "num": "01", "label": "INSTALL", "text": "The script sets up Node.js, pulls the repo, and downloads Chromium via Playwright." },
       { "num": "02", "label": "CONFIGURE", "text": "Pick a site from the available configs and enter your login credentials." },
       { "num": "03", "label": "BOOT", "text": "A systemd service launches a full-screen kiosk browser on every startup." },
-      { "num": "04", "label": "RECOVER", "text": "Periodic health checks detect session drops and re-authenticate automatically." }
+      { "num": "04", "label": "RECOVER", "text": "Cookie-based health checks detect session drops and re-authenticate without disrupting playback or active use." }
     ]
   },
   "usage": {
@@ -56,6 +56,15 @@
     "credentialsCommands": [
       { "cmd": "nano ~/kiosk/.env", "desc": "Edit credentials" },
       { "cmd": "sudo systemctl restart kiosk", "desc": "Apply changes" }
+    ]
+  },
+  "updating": {
+    "command": "./install.sh --help",
+    "heading": "UPDATING",
+    "description": "Re-run the installer to pull the latest version. Existing installations are detected automatically — your site config, credentials, and service setup are preserved.",
+    "items": [
+      { "cmd": "~/kiosk/scripts/install.sh", "desc": "Pull latest and restart" },
+      { "cmd": "~/kiosk/scripts/install.sh --reset", "desc": "Pull latest and re-enter credentials" }
     ]
   },
   "sites": {
