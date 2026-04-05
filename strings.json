@@ -13,5 +13,6 @@
   "recoveryFailed": "Recovery failed:",
   "pageCrashed": "Page crashed, exiting for restart",
   "cookieDismissed": "Cookie consent accepted",
-  "fatalError": "Fatal error:"
+  "fatalError": "Fatal error:",
+  "exitSequenceTriggered": "Exit sequence entered, shutting down kiosk"
 }

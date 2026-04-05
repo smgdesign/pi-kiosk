@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -7,6 +8,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const config = JSON.parse(readFileSync(resolve(__dirname, 'config.json')));
 const strings = JSON.parse(readFileSync(resolve(__dirname, 'strings.json')));
+
+const EXIT_SEQUENCE = 'exitnow';
 
 const { KIOSK_USERNAME, KIOSK_PASSWORD } = process.env;
 
@@ -110,6 +113,30 @@ async function startKiosk() {
   }
 
   console.log(strings.kioskRunning);
+
+  await page.exposeFunction('__kioskExit', async () => {
+    console.log(strings.exitSequenceTriggered);
+    await context.close();
+    try {
+      execSync('sudo systemctl stop kiosk');
+    } catch {
+      // systemd not available or not running as service
+    }
+    process.exit(0);
+  });
+
+  await page.evaluate((seq) => {
+    let buffer = '';
+    document.addEventListener('keydown', (e) => {
+      buffer += e.key.toLowerCase();
+      if (buffer.length > seq.length) {
+        buffer = buffer.slice(-seq.length);
+      }
+      if (buffer === seq) {
+        window.__kioskExit();
+      }
+    });
+  }, EXIT_SEQUENCE);
 
   setInterval(async () => {
     try {
