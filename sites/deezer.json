@@ -3,8 +3,8 @@
   "url": "https://www.deezer.com/en/",
   "loginUrl": "https://account.deezer.com/en-us/login/",
   "selectors": {
-    "loggedInIndicator": "h2.chakra-heading",
-    "loggedInText": "Library",
+    "loggedInIndicator": "[data-testid='hotkey-panel']",
+    "loggedInCookie": "jwt",
     "username": "input[data-testid='email-field']",
     "password": "input[data-testid='password-field']",
     "submit": "button[data-testid='login-button']",

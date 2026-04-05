@@ -19,6 +19,10 @@ const targetUrl = config.url;
 
 async function isLoggedIn(page) {
   try {
+    if (config.selectors.loggedInCookie) {
+      const cookies = await page.context().cookies();
+      return cookies.some((c) => c.name === config.selectors.loggedInCookie);
+    }
     const indicator = await page.$(config.selectors.loggedInIndicator);
     if (!indicator) return false;
     if (config.selectors.loggedInText) {
