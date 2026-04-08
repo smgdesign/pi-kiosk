@@ -162,6 +162,7 @@ install_project() {
 
   print_step "Configuring web browser..."
   run_quiet "Configuring web browser" bash -c "cd $INSTALL_DIR && sudo npx playwright install-deps chromium"
+  install_extensions
   print_done "Web browser configured"
 }
 
@@ -200,6 +201,37 @@ check_site_update() {
   fi
 
   return 1
+}
+
+install_extensions() {
+  local ext_dir="$INSTALL_DIR/extensions"
+  local keyboard_id="cjabmkimbcmhhepelfhjhbhonnapiipj"
+  local keyboard_dir="$ext_dir/$keyboard_id"
+
+  if [[ -d "$keyboard_dir" ]]; then
+    print_done "On-screen keyboard already installed"
+    return
+  fi
+
+  print_step "Installing on-screen keyboard extension..."
+  mkdir -p "$ext_dir"
+
+  local crx_url="https://clients2.google.com/service/update2/crx?response=redirect&prodversion=120.0&acceptformat=crx2,crx3&x=id%3D${keyboard_id}%26uc"
+  local crx_file="$ext_dir/$keyboard_id.crx"
+
+  curl -sSL -o "$crx_file" "$crx_url"
+  mkdir -p "$keyboard_dir"
+  # CRX files are zips with a header; find the PK signature and extract from there
+  python3 -c "
+import zipfile, io, sys
+data = open('$crx_file', 'rb').read()
+offset = data.index(b'PK\x03\x04')
+zf = zipfile.ZipFile(io.BytesIO(data[offset:]))
+zf.extractall('$keyboard_dir')
+"
+  rm -f "$crx_file"
+
+  print_done "On-screen keyboard installed"
 }
 
 install_service() {

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { existsSync, readdirSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -92,8 +93,22 @@ async function startKiosk() {
 
   console.log(strings.launchingBrowser);
   const userDataDir = resolve(__dirname, config.userDataDir || 'browser-data');
+  const extensionsDir = resolve(__dirname, 'extensions');
+  const extensionArgs = [];
+  if (existsSync(extensionsDir)) {
+    const extPaths = readdirSync(extensionsDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => resolve(extensionsDir, d.name));
+    if (extPaths.length > 0) {
+      extensionArgs.push(
+        `--disable-extensions-except=${extPaths.join(',')}`,
+        `--load-extension=${extPaths.join(',')}`,
+      );
+    }
+  }
+
   const context = await chromium.launchPersistentContext(userDataDir, {
-    args: config.chromiumArgs,
+    args: [...config.chromiumArgs, ...extensionArgs],
     headless: false,
     viewport: null,
   });
